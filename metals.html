@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Metals">
+<meta name="theme-color" content="#EFEDE7">
+<title>Metals Desk — gold, silver, platinum, copper</title>
+<style>
+  :root{
+    --paper:#EFEDE7; --card:#FBFAF6; --ink:#191C19; --ink2:#5C615C;
+    --rule:rgba(25,28,25,.14); --rule2:rgba(25,28,25,.07);
+    --up:#16624A; --down:#9E2B25; --brass:#A97C1C; --flat:#7A807A;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#171A19; --card:#1F2321; --ink:#E8E6DF; --ink2:#9AA09A;
+      --rule:rgba(232,230,223,.18); --rule2:rgba(232,230,223,.08);
+      --up:#4FBF95; --down:#E0736A; --brass:#D9A93C; --flat:#8B918B;
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Avenir Next","Avenir",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size:15px; line-height:1.45; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 30px) env(safe-area-inset-left);
+  }
+  .wrap{max-width:660px;margin:0 auto;padding:0 14px}
+  .up{color:var(--up)} .down{color:var(--down)}
+
+  header{padding:18px 0 12px;border-bottom:1px solid var(--rule)}
+  .mast{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  h1{font-size:19px;font-weight:600;letter-spacing:-.01em;margin:0}
+  .clock{font-size:12.5px;color:var(--ink2);font-weight:500;text-align:right}
+  .sub{font-size:12.5px;color:var(--ink2);margin-top:5px}
+
+  .curbar{display:flex;gap:7px;padding:12px 0;border-bottom:1px solid var(--rule)}
+  .chip{border:1px solid var(--rule);background:transparent;color:var(--ink2);font:inherit;font-size:13px;
+        font-weight:500;padding:7px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  .chip[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);font-weight:600}
+  .chip.act{border-color:var(--brass);color:var(--brass)}
+
+  .strip{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:14px 0;border-bottom:1px solid var(--rule)}
+  .mcard{border:none;background:transparent;padding:0;text-align:left;cursor:pointer;font:inherit;color:inherit;min-width:0}
+  .mcard .mn{font-size:11px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mcard .mv{font-size:13.5px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mcard .mc{font-size:11.5px;font-weight:600;margin-top:1px}
+  .mcard[aria-pressed="true"] .mn{color:var(--brass)}
+  .mcard[aria-pressed="true"]{border-bottom:2px solid var(--brass);padding-bottom:4px}
+
+  .hero{padding:18px 0 6px}
+  .hn{font-size:13px;color:var(--ink2)}
+  .hp{font-size:32px;font-weight:600;letter-spacing:-.02em;line-height:1.15;margin-top:2px}
+  .hu{font-size:12.5px;color:var(--ink2);margin-top:2px}
+  .hc{font-size:14px;font-weight:600;margin-top:6px}
+
+  .ranges{display:flex;gap:6px;padding:14px 0 8px;flex-wrap:wrap}
+  .ranges .chip{padding:6px 12px;font-size:12.5px}
+  .chartbox{position:relative;background:var(--card);border:1px solid var(--rule2);border-radius:2px;padding:10px 10px 6px}
+  svg.chart{display:block;width:100%;height:170px;touch-action:pan-y}
+  .axis{display:flex;justify-content:space-between;font-size:11px;color:var(--ink2);padding:4px 2px 0}
+  .scrub{position:absolute;top:8px;left:10px;right:10px;font-size:12px;color:var(--ink2);pointer-events:none;text-align:right}
+  .scrub b{color:var(--ink);font-weight:600}
+
+  .sec{font-size:12px;font-weight:700;color:var(--ink2);margin:22px 0 8px;letter-spacing:.01em}
+  table.t{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.t th{text-align:right;font-size:11px;font-weight:600;color:var(--ink2);padding:0 0 6px;border-bottom:1px solid var(--rule)}
+  table.t th:first-child{text-align:left}
+  table.t td{padding:7px 0;border-bottom:1px solid var(--rule2);text-align:right;font-weight:600}
+  table.t td:first-child{text-align:left;font-weight:500;color:var(--ink2)}
+  table.t tr.hl td{color:var(--brass)}
+
+  .perf{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px;margin-top:4px}
+  .perf div{font-size:12px;color:var(--ink2)}
+  .perf div b{display:block;font-size:14.5px;font-weight:600;margin-top:1px}
+
+  .box{background:var(--card);border:1px solid var(--rule2);border-radius:2px;padding:12px;margin-top:8px}
+  .inrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .inrow label{flex:1;font-size:13px;color:var(--ink2)}
+  .inrow input{width:82px;font:inherit;font-size:14px;text-align:right;background:var(--paper);color:var(--ink);
+               border:1px solid var(--rule);border-radius:2px;padding:6px 8px}
+  .gap{border-left:2px solid var(--brass);padding-left:10px;margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink2)}
+  .gap b{color:var(--ink);font-weight:600}
+
+  .note{font-size:12.5px;color:var(--ink2);line-height:1.6;padding:14px 0}
+  .err{color:var(--down);font-size:13px;line-height:1.55;padding:12px 0}
+  details.panel{border-top:1px solid var(--rule);padding:13px 0;margin-top:8px}
+  details.panel summary{font-size:13.5px;font-weight:600;cursor:pointer;list-style:none}
+  details.panel summary::-webkit-details-marker{display:none}
+  details.panel summary:before{content:"+ ";color:var(--ink2)}
+  details.panel[open] summary:before{content:"\2013 "}
+  .learn{font-size:13.5px;line-height:1.65;color:var(--ink2);max-width:62ch}
+  .learn h3{font-size:14.5px;font-weight:600;color:var(--ink);margin:16px 0 5px}
+  .learn h3:first-child{margin-top:10px}
+  .learn p{margin:0 0 9px}
+  .learn b{color:var(--ink);font-weight:600}
+  .learn ul{margin:0 0 10px;padding-left:18px}
+  :focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="mast">
+    <h1>Metals desk</h1>
+    <span class="clock" id="clock">—</span>
+  </div>
+  <div class="sub" id="fxline">Loading exchange rates…</div>
+</header>
+
+<div class="curbar">
+  <button class="chip" data-cur="SGD" aria-pressed="true">SGD</button>
+  <button class="chip" data-cur="INR" aria-pressed="false">INR</button>
+  <button class="chip act" id="refresh" style="margin-left:auto">Refresh</button>
+</div>
+
+<div class="strip" id="strip"></div>
+
+<div id="err" class="err" hidden></div>
+
+<div class="hero">
+  <div class="hn" id="heroName">Gold</div>
+  <div class="hp" id="heroPrice">—</div>
+  <div class="hu" id="heroUnit"></div>
+  <div class="hc" id="heroChg"></div>
+</div>
+
+<div class="ranges" id="ranges"></div>
+<div class="chartbox">
+  <svg class="chart" id="chart" preserveAspectRatio="none" aria-hidden="true"></svg>
+  <div class="scrub" id="scrub"></div>
+  <div class="axis"><span id="axL"></span><span id="axR"></span></div>
+</div>
+
+<div class="sec">Performance</div>
+<div class="perf" id="perf"></div>
+
+<div class="sec" id="unitsHead">Price by weight</div>
+<table class="t" id="units"></table>
+
+<div class="sec">What it costs to actually buy</div>
+<div class="box" id="retail"></div>
+
+<details class="panel">
+  <summary>How these numbers work</summary>
+  <div class="learn" id="learn"></div>
+</details>
+
+<div class="note">
+  Metal prices are COMEX futures from Yahoo Finance via a free relay, converted at live USD rates — they are the
+  international benchmark, not a dealer's counter price. A jeweller or bullion dealer will always quote higher.
+  Tax and duty figures below are editable assumptions, not live data; verify against CBIC and IRAS before
+  any large purchase. Nothing here is financial advice.
+</div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var OZ = 31.1034768, LB = 453.59237;
+
+var METALS = [
+  {k:"gold",     y:"GC=F", n:"Gold",      unit:"oz", disp:"g",  dp:2},
+  {k:"silver",   y:"SI=F", n:"Silver",    unit:"oz", disp:"g",  dp:2},
+  {k:"platinum", y:"PL=F", n:"Platinum",  unit:"oz", disp:"g",  dp:2},
+  {k:"palladium",y:"PA=F", n:"Palladium", unit:"oz", disp:"g",  dp:2},
+  {k:"copper",   y:"HG=F", n:"Copper",    unit:"lb", disp:"kg", dp:2}
+];
+var PURITY = [["24K (999)",1],["22K (916)",22/24],["18K (750)",0.75],["14K (585)",14/24]];
+var RANGES = [["1m","1M",22],["3m","3M",66],["6m","6M",130],["1y","1Y",256],["5y","5Y",99999]];
+
+var cur="SGD", metal="gold", range="1y";
+var series={}, fx={SGD:null,INR:null}, fxNow={SGD:null,INR:null}, loading=false;
+var duty = {inDuty:15, inGst:3, inMaking:10, sgPrem:3};
+
+/* ---- storage ---- */
+var mem={};
+function load(k,d){ try{var v=localStorage.getItem(k);return v===null?(k in mem?mem[k]:d):JSON.parse(v);}catch(e){return (k in mem)?mem[k]:d;} }
+function save(k,v){ mem[k]=v; try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+
+/* ---- transport ---- */
+var TRANSPORTS=[
+  {n:"allorigins", u:function(t){return "https://api.allorigins.win/raw?url="+encodeURIComponent(t);}},
+  {n:"allorigins2",u:function(t){return "https://api.allorigins.win/get?url="+encodeURIComponent(t);},wrap:"contents"},
+  {n:"codetabs",   u:function(t){return "https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(t);}},
+  {n:"corsproxy",  u:function(t){return "https://corsproxy.io/?url="+encodeURIComponent(t);}},
+  {n:"direct",     u:function(t){return t;}}
+];
+var goodT=null;
+function withTimeout(p,ms){return new Promise(function(res,rej){var to=setTimeout(function(){rej(new Error("timeout"));},ms);
+  p.then(function(v){clearTimeout(to);res(v);},function(e){clearTimeout(to);rej(e);});});}
+async function viaTransport(i,target){
+  var tr=TRANSPORTS[i],r;
+  try{ r=await withTimeout(fetch(tr.u(target),{cache:"no-store"}),14000); }
+  catch(e){ throw new Error(tr.n+": "+(e.message==="timeout"?"timed out":"blocked or unreachable")); }
+  if(!r.ok) throw new Error(tr.n+": HTTP "+r.status);
+  var txt=await r.text(),j;
+  try{ j=JSON.parse(txt); }catch(e){ throw new Error(tr.n+": non-JSON"); }
+  if(tr.wrap){ try{ j=JSON.parse(j[tr.wrap]); }catch(e){ throw new Error(tr.n+": bad wrapper"); } }
+  if(!j||!j.chart) throw new Error(tr.n+": no chart data");
+  if(j.chart.error) throw new Error(tr.n+": "+(j.chart.error.description||"rejected"));
+  return j;
+}
+async function fetchJSON(t){
+  var order=TRANSPORTS.map(function(_,i){return i;});
+  if(goodT!==null){ order=order.filter(function(i){return i!==goodT;}); order.unshift(goodT); }
+  var last=null;
+  for(var k=0;k<order.length;k++){
+    try{ var j=await viaTransport(order[k],t); goodT=order[k]; return j; }catch(e){ last=e; }
+  }
+  throw last||new Error("no route");
+}
+async function chart5y(sym){
+  var hosts=["query1","query2"],err=null;
+  for(var i=0;i<hosts.length;i++){
+    try{
+      return await fetchJSON("https://"+hosts[i]+".finance.yahoo.com/v8/finance/chart/"
+        +encodeURIComponent(sym)+"?range=5y&interval=1d");
+    }catch(e){ err=e; }
+  }
+  throw err;
+}
+function toSeries(j){
+  var r=j.chart&&j.chart.result&&j.chart.result[0];
+  if(!r||!r.timestamp) return null;
+  var q=r.indicators.quote[0],out=[];
+  for(var i=0;i<r.timestamp.length;i++){
+    if(q.close[i]==null) continue;
+    out.push({t:r.timestamp[i]*1000,c:q.close[i]});
+  }
+  return {pts:out, meta:r.meta||{}};
+}
+
+/* ---- dates ---- */
+function dkey(ms){ var d=new Date(ms); return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0"); }
+function shortDate(ms){ return new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",year:"2-digit"}).format(new Date(ms)); }
+function clocks(){
+  var f=function(tz){ return new Intl.DateTimeFormat("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date()); };
+  return f("Asia/Singapore")+" SGT \u00b7 "+f("Asia/Kolkata")+" IST";
+}
+
+/* ---- conversion ---- */
+function fxAt(ccy, ms){
+  var m=fx[ccy]; if(!m) return null;
+  var k=dkey(ms);
+  if(m.map[k]!=null) return m.map[k];
+  var keys=m.keys, lo=0, hi=keys.length-1, best=null;
+  while(lo<=hi){ var mid=(lo+hi)>>1;
+    if(keys[mid]<=k){ best=m.map[keys[mid]]; lo=mid+1; } else hi=mid-1; }
+  return best!=null?best:m.map[keys[0]];
+}
+/* returns array of {t, v} where v = price per display unit in `cur` */
+function converted(mk, ccy){
+  var cfg=METALS.filter(function(m){return m.k===mk;})[0];
+  var s=series[mk]; if(!s) return null;
+  var perUnit = cfg.unit==="oz" ? (1/OZ) : (1/LB*1000);   /* oz->per g ; lb->per kg */
+  var out=[];
+  for(var i=0;i<s.pts.length;i++){
+    var r=fxAt(ccy,s.pts[i].t); if(r==null) continue;
+    out.push({t:s.pts[i].t, v:s.pts[i].c*perUnit*r});
+  }
+  return out;
+}
+function sliceRange(arr){
+  var n = RANGES.filter(function(r){return r[0]===range;})[0][2];
+  return arr.length>n ? arr.slice(arr.length-n) : arr;
+}
+
+/* ---- format ---- */
+function money(n,dp){
+  if(n==null||isNaN(n)) return "\u2014";
+  var sym = cur==="INR" ? "\u20B9" : "S$";
+  var loc = cur==="INR" ? "en-IN" : "en-SG";
+  return sym+Number(n).toLocaleString(loc,{minimumFractionDigits:dp==null?2:dp,maximumFractionDigits:dp==null?2:dp});
+}
+function pct(n){ if(n==null||isNaN(n)) return "\u2014"; return (n>=0?"+":"")+n.toFixed(2)+"%"; }
+function chgCls(n){ return n>0?"up":n<0?"down":""; }
+
+/* ---- chart ---- */
+var chartPts=[];
+function drawChart(){
+  var arr=converted(metal,cur); if(!arr||!arr.length) return;
+  arr=sliceRange(arr); chartPts=arr;
+  var W=340,H=170,PAD=6;
+  var vals=arr.map(function(p){return p.v;});
+  var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals), sp=(hi-lo)||1;
+  var up = arr[arr.length-1].v >= arr[0].v;
+  var col = up?"var(--up)":"var(--down)";
+  var pts=[],area=[];
+  for(var i=0;i<arr.length;i++){
+    var x=(i/(arr.length-1))*W, y=H-PAD-((arr[i].v-lo)/sp)*(H-PAD*2);
+    pts.push(x.toFixed(1)+","+y.toFixed(1));
+  }
+  area = "M0,"+H+" L"+pts.join(" L")+" L"+W+","+H+" Z";
+  var svg=document.getElementById("chart");
+  svg.setAttribute("viewBox","0 0 "+W+" "+H);
+  svg.innerHTML =
+     '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="'+col+'" stop-opacity="0.16"/>'
+    +'<stop offset="100%" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'
+    +'<path d="'+area+'" fill="url(#g)"/>'
+    +'<polyline fill="none" stroke="'+col+'" stroke-width="1.7" stroke-linejoin="round" points="'+pts.join(" ")+'"/>'
+    +'<line id="cross" x1="0" y1="0" x2="0" y2="'+H+'" stroke="var(--ink2)" stroke-width="1" opacity="0"/>';
+  document.getElementById("axL").textContent=shortDate(arr[0].t);
+  document.getElementById("axR").textContent=shortDate(arr[arr.length-1].t);
+  document.getElementById("scrub").innerHTML =
+    "high "+money(hi)+" \u00b7 low "+money(lo);
+}
+(function scrubSetup(){
+  var svg=document.getElementById("chart");
+  function at(e){
+    if(!chartPts.length) return;
+    var r=svg.getBoundingClientRect();
+    var x=((e.touches?e.touches[0].clientX:e.clientX)-r.left)/r.width;
+    var i=Math.max(0,Math.min(chartPts.length-1,Math.round(x*(chartPts.length-1))));
+    var p=chartPts[i];
+    document.getElementById("scrub").innerHTML="<b>"+money(p.v)+"</b> \u00b7 "+shortDate(p.t);
+    var c=svg.querySelector("#cross");
+    if(c){ var X=(i/(chartPts.length-1))*340; c.setAttribute("x1",X); c.setAttribute("x2",X); c.setAttribute("opacity","0.5"); }
+  }
+  function off(){
+    var c=svg.querySelector("#cross"); if(c) c.setAttribute("opacity","0");
+    drawChart();
+  }
+  svg.addEventListener("touchstart",at,{passive:true});
+  svg.addEventListener("touchmove",at,{passive:true});
+  svg.addEventListener("touchend",off);
+  svg.addEventListener("mousemove",at);
+  svg.addEventListener("mouseleave",off);
+})();
+
+/* ---- render ---- */
+function pctOver(arr,bars){
+  if(!arr||arr.length<2) return null;
+  var i=Math.max(0,arr.length-1-bars);
+  var a=arr[i].v,b=arr[arr.length-1].v;
+  return a?((b-a)/a*100):null;
+}
+
+function renderStrip(){
+  var el=document.getElementById("strip");
+  el.innerHTML=METALS.map(function(m){
+    var arr=converted(m.k,cur);
+    var last=arr&&arr.length?arr[arr.length-1].v:null;
+    var d1=pctOver(arr,1);
+    return '<button class="mcard" data-m="'+m.k+'" aria-pressed="'+(m.k===metal)+'">'
+      +'<div class="mn">'+m.n+'</div>'
+      +'<div class="mv">'+(last==null?"\u2014":money(last, m.k==="copper"?1:(m.k==="silver"?2:0)))+'</div>'
+      +'<div class="mc '+chgCls(d1)+'">'+(d1==null?"":pct(d1))+'</div></button>';
+  }).join("");
+}
+
+function renderHero(){
+  var cfg=METALS.filter(function(m){return m.k===metal;})[0];
+  var arr=converted(metal,cur);
+  var last=arr&&arr.length?arr[arr.length-1].v:null;
+  document.getElementById("heroName").textContent=cfg.n;
+  document.getElementById("heroPrice").textContent=last==null?"\u2014":money(last);
+  document.getElementById("heroUnit").textContent="per "+(cfg.disp==="g"?"gram":"kilogram")+", "+cur
+    +(cfg.k==="gold"?" \u00b7 24K pure":"");
+  var d1=pctOver(arr,1);
+  var el=document.getElementById("heroChg");
+  el.className="hc "+chgCls(d1);
+  el.textContent=(d1==null?"":pct(d1)+" today");
+}
+
+function renderPerf(){
+  var arr=converted(metal,cur);
+  var defs=[["1 week",5],["1 month",22],["3 months",66],["6 months",130],["1 year",256],["5 years",99999]];
+  document.getElementById("perf").innerHTML=defs.map(function(d){
+    var p=pctOver(arr,Math.min(d[1],arr?arr.length-1:0));
+    return '<div>'+d[0]+'<b class="'+chgCls(p)+'">'+pct(p)+'</b></div>';
+  }).join("");
+}
+
+function renderUnits(){
+  var cfg=METALS.filter(function(m){return m.k===metal;})[0];
+  var arr=converted(metal,cur);
+  var g=arr&&arr.length?arr[arr.length-1].v:null;   /* per gram, or per kg for copper */
+  var t=document.getElementById("units");
+  var head=document.getElementById("unitsHead");
+  if(g==null){ t.innerHTML=""; return; }
+
+  if(metal==="gold"){
+    head.textContent="Gold by purity";
+    t.innerHTML='<tr><th>Purity</th><th>1 gram</th><th>8 g (1 pavan)</th><th>10 g</th></tr>'
+      + PURITY.map(function(p){
+          var v=g*p[1];
+          return '<tr'+(p[1]===22/24?' class="hl"':'')+'><td>'+p[0]+'</td><td>'+money(v,0)+'</td><td>'+money(v*8,0)+'</td><td>'+money(v*10,0)+'</td></tr>';
+        }).join("")
+      + '<tr><td>1 troy ounce</td><td colspan="3">'+money(g*OZ,0)+'</td></tr>'
+      + '<tr><td>1 tola (11.664 g)</td><td colspan="3">'+money(g*11.6638,0)+'</td></tr>';
+  } else if(metal==="copper"){
+    head.textContent="Copper by weight";
+    t.innerHTML='<tr><th>Weight</th><th>Price</th></tr>'
+      +'<tr class="hl"><td>1 kilogram</td><td>'+money(g)+'</td></tr>'
+      +'<tr><td>1 pound</td><td>'+money(g*0.45359237)+'</td></tr>'
+      +'<tr><td>100 kg</td><td>'+money(g*100,0)+'</td></tr>'
+      +'<tr><td>1 tonne</td><td>'+money(g*1000,0)+'</td></tr>';
+  } else {
+    head.textContent=cfg.n+" by weight";
+    t.innerHTML='<tr><th>Weight</th><th>Price</th></tr>'
+      +'<tr class="hl"><td>1 gram</td><td>'+money(g)+'</td></tr>'
+      +'<tr><td>10 grams</td><td>'+money(g*10,0)+'</td></tr>'
+      +'<tr><td>100 grams</td><td>'+money(g*100,0)+'</td></tr>'
+      +'<tr><td>1 kilogram</td><td>'+money(g*1000,0)+'</td></tr>'
+      +'<tr><td>1 troy ounce</td><td>'+money(g*OZ,0)+'</td></tr>';
+  }
+}
+
+function renderRetail(){
+  var box=document.getElementById("retail");
+  var arrI=converted(metal,"INR"), arrS=converted(metal,"SGD");
+  var gI=arrI&&arrI.length?arrI[arrI.length-1].v:null;
+  var gS=arrS&&arrS.length?arrS[arrS.length-1].v:null;
+  if(gI==null||gS==null){ box.innerHTML="Waiting for prices…"; return; }
+
+  var inFactor=(1+duty.inDuty/100)*(1+duty.inGst/100);
+  var sgFactor=(1+duty.sgPrem/100);
+  var unitLabel = metal==="copper" ? "per kg" : "per 10 g";
+  var mult = metal==="copper" ? 1 : 10;
+
+  var inBullion=gI*mult*inFactor;
+  var sgBullion=gS*mult*sgFactor;
+  var inJewel=inBullion*(1+duty.inMaking/100);
+
+  /* compare in a single currency: convert SG bullion to INR */
+  var usdSgd=fxNow.SGD, usdInr=fxNow.INR;
+  var sgInInr = (usdSgd&&usdInr) ? sgBullion/usdSgd*usdInr : null;
+  var diff = sgInInr!=null ? (inBullion-sgInInr)/sgInInr*100 : null;
+
+  box.innerHTML =
+     '<div class="inrow"><label>India import duty %</label><input id="d1" inputmode="decimal" value="'+duty.inDuty+'"></div>'
+    +'<div class="inrow"><label>India GST %</label><input id="d2" inputmode="decimal" value="'+duty.inGst+'"></div>'
+    +'<div class="inrow"><label>Jewellery making charge %</label><input id="d3" inputmode="decimal" value="'+duty.inMaking+'"></div>'
+    +'<div class="inrow"><label>Singapore dealer premium %</label><input id="d4" inputmode="decimal" value="'+duty.sgPrem+'"></div>'
+    +'<table class="t" style="margin-top:10px">'
+    +'<tr><th>Estimate ('+unitLabel+')</th><th>Cost</th></tr>'
+    +'<tr><td>International benchmark</td><td>'+(cur==="INR"?"\u20B9"+(gI*mult).toLocaleString("en-IN",{maximumFractionDigits:0}):"S$"+(gS*mult).toLocaleString("en-SG",{maximumFractionDigits:0}))+'</td></tr>'
+    +'<tr><td>India, bullion (duty + GST)</td><td>\u20B9'+inBullion.toLocaleString("en-IN",{maximumFractionDigits:0})+'</td></tr>'
+    +'<tr><td>India, jewellery (+ making)</td><td>\u20B9'+inJewel.toLocaleString("en-IN",{maximumFractionDigits:0})+'</td></tr>'
+    +'<tr class="hl"><td>Singapore, bullion (GST exempt)</td><td>S$'+sgBullion.toLocaleString("en-SG",{maximumFractionDigits:0})
+      +(sgInInr!=null?' <span style="color:var(--ink2);font-weight:500">\u2248 \u20B9'+sgInInr.toLocaleString("en-IN",{maximumFractionDigits:0})+'</span>':'')+'</td></tr>'
+    +'</table>'
+    + (diff!=null
+        ? '<div class="gap">Buying bullion in India works out about <b>'+Math.abs(diff).toFixed(1)+'% '
+          +(diff>0?'more expensive':'cheaper')+'</b> than Singapore on these assumptions, almost entirely because '
+          +'qualifying investment bullion is GST-exempt in Singapore while India charges duty plus GST. '
+          +'Carrying metal into India is a separate matter \u2014 passengers have a limited duty-free allowance and '
+          +'anything above it is dutiable and must be declared.</div>'
+        : "");
+
+  ["d1","d2","d3","d4"].forEach(function(id,i){
+    document.getElementById(id).addEventListener("change",function(){
+      var v=parseFloat(this.value); if(isNaN(v)||v<0) return;
+      duty[["inDuty","inGst","inMaking","sgPrem"][i]]=v;
+      save("mt.duty",duty); renderRetail();
+    });
+  });
+}
+
+function renderAll(){ renderStrip(); renderHero(); drawChart(); renderPerf(); renderUnits(); renderRetail(); }
+
+/* ---- load ---- */
+async function loadAll(){
+  if(loading) return; loading=true;
+  var errEl=document.getElementById("err"); errEl.hidden=true;
+  var fail=[], reason=null;
+
+  async function grabFX(ccy,sym){
+    try{
+      var s=toSeries(await chart5y(sym)); if(!s) throw new Error("thin");
+      var map={},keys=[];
+      s.pts.forEach(function(p){ var k=dkey(p.t); if(map[k]==null) keys.push(k); map[k]=p.c; });
+      keys.sort();
+      fx[ccy]={map:map,keys:keys};
+      fxNow[ccy]= s.meta.regularMarketPrice!=null ? s.meta.regularMarketPrice : s.pts[s.pts.length-1].c;
+    }catch(e){ fail.push(ccy); if(!reason) reason=e.message; }
+  }
+  await Promise.all([grabFX("SGD","SGD=X"), grabFX("INR","INR=X")]);
+
+  document.getElementById("fxline").textContent =
+    (fxNow.SGD?"1 USD = S$"+fxNow.SGD.toFixed(3):"") +
+    (fxNow.INR?"  \u00b7  1 USD = \u20B9"+fxNow.INR.toFixed(2):"") || "Exchange rates unavailable";
+
+  await Promise.all(METALS.map(async function(m){
+    try{
+      var s=toSeries(await chart5y(m.y)); if(!s) throw new Error("thin");
+      series[m.k]=s;
+    }catch(e){ fail.push(m.n); if(!reason) reason=e.message; }
+  }));
+
+  renderAll();
+  if(fail.length){
+    errEl.hidden=false;
+    errEl.innerHTML = fail.length>=5
+      ? "Nothing loaded. Last error: <b>"+(reason||"unknown")+"</b>. If that says <i>blocked or unreachable</i>, open this page from its https address rather than a local file."
+      : "Couldn't load: "+fail.join(", ")+". Tap Refresh.";
+  }
+  loading=false;
+}
+
+/* ---- chrome ---- */
+document.getElementById("clock").textContent=clocks();
+setInterval(function(){ document.getElementById("clock").textContent=clocks(); },20000);
+
+(function(){
+  var el=document.getElementById("ranges");
+  el.innerHTML=RANGES.map(function(r){
+    return '<button class="chip" data-r="'+r[0]+'" aria-pressed="'+(r[0]===range)+'">'+r[1]+'</button>';
+  }).join("");
+  el.addEventListener("click",function(e){
+    var b=e.target.closest(".chip[data-r]"); if(!b) return;
+    range=b.dataset.r;
+    el.querySelectorAll(".chip").forEach(function(x){x.setAttribute("aria-pressed",String(x===b));});
+    drawChart();
+  });
+})();
+
+document.querySelector(".curbar").addEventListener("click",function(e){
+  var b=e.target.closest(".chip[data-cur]"); if(!b) return;
+  cur=b.dataset.cur; save("mt.cur",cur);
+  document.querySelectorAll(".chip[data-cur]").forEach(function(x){x.setAttribute("aria-pressed",String(x===b));});
+  renderAll();
+});
+
+document.getElementById("strip").addEventListener("click",function(e){
+  var b=e.target.closest(".mcard"); if(!b) return;
+  metal=b.dataset.m; save("mt.metal",metal); renderAll();
+});
+
+document.getElementById("refresh").addEventListener("click",loadAll);
+
+document.getElementById("learn").innerHTML=[
+'<h3>Where the price comes from</h3>',
+'<p>Gold, silver, platinum and palladium are quoted internationally in <b>US dollars per troy ounce</b> (31.1035 g). Copper is quoted in <b>US dollars per pound</b>. This page pulls the COMEX futures price, divides into grams or kilograms, and multiplies by the live USD rate for your chosen currency. Historical charts use the exchange rate as it stood on each date, so a rupee chart shows the metal move and the currency move combined \u2014 which is exactly what you actually experienced as a buyer.</p>',
+
+'<h3>Purity, and what 22K really means</h3>',
+'<p>Karat is a fraction out of 24. <b>24K</b> is pure gold, <b>22K is 22/24 = 91.6%</b> gold, <b>18K is 75%</b>, <b>14K is 58.3%</b>. The rest is alloy, which costs almost nothing. So 22K jewellery should cost roughly 91.6% of the 24K rate for the same weight, plus making charges.</p>',
+'<p>Pure gold is too soft for jewellery, which is why 22K dominates in India and 18K in much of the West. For <i>investment</i>, 24K bars and coins are the sensible form \u2014 you are not paying for craftsmanship you cannot recover on resale.</p>',
+
+'<h3>Why your jeweller quotes more</h3>',
+'<p>The benchmark on this page is a wholesale contract price. Between it and the counter sit import duty, tax, refining, transport, insurance, the dealer\'s margin and, for jewellery, making charges.</p>',
+'<ul>',
+'<li><b>India:</b> import duty was raised from 6% to 15% in May 2026 (10% basic customs duty plus 5% agriculture cess), and 3% GST applies on top at the point of sale. Compounded, that is roughly 18.5% before anyone has made anything. Jewellery adds making charges, commonly 8\u201325%, and GST applies to those too.</li>',
+'<li><b>Singapore:</b> investment-grade bullion is <b>GST exempt</b> \u2014 gold at least 99.5% pure, silver 99.9%, platinum 99%, in bar, ingot, wafer or qualifying coin form from an accredited refiner. Jewellery and collectible coins do not qualify and are taxed normally. Palladium is not covered at all.</li>',
+'</ul>',
+'<p>That exemption is why Singapore is consistently cheaper for bars and coins. It does not extend to jewellery, and carrying metal across a border has its own rules \u2014 above the passenger allowance it must be declared and duty paid.</p>',
+
+'<h3>Reading the numbers</h3>',
+'<p>The duty and premium fields above are <b>assumptions you can edit</b>, not live feeds. Rates move: India\'s duty has swung from 15% down to 6% and back to 15% in the space of two years. Check CBIC notifications and IRAS guidance before committing real money.</p>',
+'<p>The gold-to-silver ratio is worth watching if you hold both \u2014 divide the gold gram price by the silver gram price. Historically it has spent most of its time between roughly 50 and 90; extremes at either end tend not to last, though "tend not to" is not a schedule.</p>',
+
+'<h3>Copper is a different animal</h3>',
+'<p>Copper is an industrial metal, not a store of value. It tracks construction, power grids and manufacturing demand, especially from China. People watch it as a read on the world economy rather than as something to keep in a safe. It is included here because you asked, but do not treat it like the others.</p>',
+
+'<p style="margin-top:14px"><b>Not financial advice.</b> Prices are delayed, taxes are assumptions, and none of this knows anything about your situation.</p>'
+].join("");
+
+/* ---- boot ---- */
+cur=load("mt.cur","SGD"); metal=load("mt.metal","gold"); duty=load("mt.duty",duty);
+document.querySelectorAll(".chip[data-cur]").forEach(function(x){x.setAttribute("aria-pressed",String(x.dataset.cur===cur));});
+loadAll();
+})();
+</script>
+</body>
+</html>
