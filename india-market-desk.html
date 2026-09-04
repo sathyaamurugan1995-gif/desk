@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Market Desk">
+<meta name="theme-color" content="#EFEDE7">
+<title>India Market Desk — 100 stocks</title>
+<style>
+  :root{
+    --paper:#EFEDE7; --card:#FBFAF6; --ink:#191C19; --ink2:#5C615C;
+    --rule:rgba(25,28,25,.14); --rule2:rgba(25,28,25,.07);
+    --up:#16624A; --down:#9E2B25; --brass:#A97C1C; --flat:#7A807A;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#171A19; --card:#1F2321; --ink:#E8E6DF; --ink2:#9AA09A;
+      --rule:rgba(232,230,223,.18); --rule2:rgba(232,230,223,.08);
+      --up:#4FBF95; --down:#E0736A; --brass:#D9A93C; --flat:#8B918B;
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Avenir Next","Avenir",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size:15px; line-height:1.45; font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 30px) env(safe-area-inset-left);
+  }
+  .wrap{max-width:680px;margin:0 auto;padding:0 14px}
+  .up{color:var(--up)} .down{color:var(--down)} .brass{color:var(--brass)}
+
+  header{padding:18px 0 12px;border-bottom:1px solid var(--rule)}
+  .mast{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  h1{font-size:19px;font-weight:600;letter-spacing:-.01em;margin:0}
+  .clock{font-size:13px;color:var(--ink2);font-weight:500}
+  .status{display:flex;align-items:center;gap:7px;margin-top:6px;font-size:13px;color:var(--ink2)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--flat);flex:none}
+  .dot.live{background:var(--up)} .dot.pre{background:var(--brass)}
+
+  /* cues */
+  .cues{border-bottom:1px solid var(--rule);padding:13px 0}
+  .cuegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px 12px}
+  .cue{min-width:0}
+  .cue .cn{font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cue .cv{font-size:14px;font-weight:600;margin-top:1px}
+  .cue .cc{font-size:12px;font-weight:600}
+  .read{margin-top:12px;font-size:13.5px;line-height:1.5;color:var(--ink2);border-left:2px solid var(--brass);padding-left:10px}
+  .read b{color:var(--ink);font-weight:600}
+
+  .lede{padding:15px 0 13px;border-bottom:1px solid var(--rule)}
+  .lede .big{font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
+  .lede .big em{font-style:normal}
+  .lede .sub{font-size:12.5px;color:var(--ink2);margin-top:4px}
+  .prog{height:2px;background:var(--rule2);margin-top:9px}
+  .prog i{display:block;height:100%;background:var(--brass);width:0%;transition:width .3s}
+
+  .bar{display:flex;gap:7px;overflow-x:auto;padding:11px 0 4px;scrollbar-width:none}
+  .bar::-webkit-scrollbar{display:none}
+  .chip{flex:none;border:1px solid var(--rule);background:transparent;color:var(--ink2);
+        font:inherit;font-size:13px;font-weight:500;padding:7px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  .chip[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);font-weight:600}
+  .chip.act{border-color:var(--brass);color:var(--brass)}
+  .row2{display:flex;gap:8px;padding:6px 0 12px;align-items:center;border-bottom:1px solid var(--rule)}
+  select{flex:1;font:inherit;font-size:13px;background:var(--card);color:var(--ink);
+         border:1px solid var(--rule);border-radius:2px;padding:7px 9px}
+
+  ul.tape{list-style:none;margin:12px 0 0;padding:0}
+  li.row{background:var(--card);border:1px solid var(--rule2);border-left:3px solid var(--flat);
+         border-radius:2px;margin-bottom:7px;overflow:hidden}
+  li.row.b-up{border-left-color:var(--up)} li.row.b-down{border-left-color:var(--down)}
+  .head{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 12px 8px;cursor:pointer;align-items:start}
+  .sym{font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .nm{font-size:11.5px;color:var(--ink2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+  .px{text-align:right}
+  .ltp{font-size:16px;font-weight:600}
+  .chg{font-size:12.5px;font-weight:600;margin-top:1px}
+  .tags{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 10px}
+  .tag{font-size:11px;font-weight:600;padding:2.5px 7px;border-radius:2px;border:1px solid var(--rule);color:var(--ink2)}
+  .tag.hot{border-color:var(--brass);color:var(--brass)}
+  .tag.g{border-color:var(--up);color:var(--up)}
+  .tag.r{border-color:var(--down);color:var(--down)}
+  .meter{height:3px;background:var(--rule2)}
+  .meter i{display:block;height:100%;background:var(--flat)}
+  .b-up .meter i{background:var(--up)} .b-down .meter i{background:var(--down)}
+
+  .detail{display:none;padding:12px;border-top:1px solid var(--rule2);font-size:13.5px}
+  .row.open .detail{display:block}
+  .spark{width:100%;height:44px;display:block;margin-bottom:10px}
+  .why{margin:0 0 12px;color:var(--ink2);line-height:1.55}
+  .why b{color:var(--ink);font-weight:600}
+  .sec{font-size:12px;font-weight:700;color:var(--ink2);margin:14px 0 6px;letter-spacing:.01em}
+  .sec:first-child{margin-top:0}
+  dl.levels{display:grid;grid-template-columns:1fr auto 1fr auto;gap:4px 10px;margin:0;font-size:13px}
+  dl.levels dt{color:var(--ink2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  dl.levels dd{margin:0;text-align:right;font-weight:600}
+  ul.check{margin:0;padding-left:17px;font-size:13px;color:var(--ink2);line-height:1.6}
+  ul.check li{margin-bottom:3px}
+  .links{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+  .links a{font-size:12px;font-weight:600;text-decoration:none;color:var(--ink);
+           border:1px solid var(--rule);border-radius:2px;padding:6px 10px}
+  .risk{border-top:1px solid var(--rule2);margin-top:12px;padding-top:10px;color:var(--ink2);font-size:12.5px;line-height:1.55}
+  .risk b{color:var(--ink)}
+
+  .note{font-size:12.5px;color:var(--ink2);line-height:1.6;padding:14px 0}
+  .empty{padding:26px 4px;color:var(--ink2);font-size:14px;line-height:1.6}
+  .err{color:var(--down);font-size:13px;line-height:1.55;padding:14px 0}
+  details.panel{border-top:1px solid var(--rule);padding:13px 0}
+  details.panel summary{font-size:13.5px;font-weight:600;cursor:pointer;list-style:none}
+  details.panel summary::-webkit-details-marker{display:none}
+  details.panel summary:before{content:"+ ";color:var(--ink2)}
+  details.panel[open] summary:before{content:"\2013 "}
+  .learn{font-size:13.5px;line-height:1.65;color:var(--ink2);max-width:62ch}
+  .learn h3{font-size:14.5px;font-weight:600;color:var(--ink);margin:18px 0 5px}
+  .learn h3:first-child{margin-top:12px}
+  .learn p{margin:0 0 9px}
+  .learn ul{margin:0 0 10px;padding-left:18px}
+  .learn li{margin-bottom:4px}
+  .learn b{color:var(--ink);font-weight:600}
+  .learn table{width:100%;border-collapse:collapse;font-size:12.5px;margin:2px 0 12px}
+  .learn td{padding:5px 0;border-bottom:1px solid var(--rule2);vertical-align:top}
+  .learn td:first-child{color:var(--ink);font-weight:600;width:38%;padding-right:10px}
+  textarea,input{width:100%;font:inherit;font-size:15px;background:var(--card);color:var(--ink);
+                 border:1px solid var(--rule);border-radius:2px;padding:9px 10px;margin-top:8px}
+  button.go{font:inherit;font-size:14px;font-weight:600;margin-top:10px;padding:10px 16px;
+            background:var(--ink);color:var(--paper);border:none;border-radius:2px;cursor:pointer}
+  .fl{font-size:12px;color:var(--ink2);margin-top:8px;display:block;line-height:1.5}
+  :focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="mast"><h1>India market desk</h1><span class="clock" id="clock">—</span></div>
+  <div class="status"><span class="dot" id="dot"></span><span id="mkt">Checking market hours…</span></div>
+</header>
+
+<section class="cues">
+  <div class="cuegrid" id="cuegrid"></div>
+  <div class="read" id="cueread">Loading overnight cues…</div>
+</section>
+
+<div class="lede">
+  <div class="big" id="lede">Loading 100 stocks…</div>
+  <div class="sub" id="ledesub">This takes a minute — the free relay is slow</div>
+  <div class="prog"><i id="prog"></i></div>
+</div>
+
+<div class="bar" id="cats"></div>
+<div class="row2">
+  <select id="sector"></select>
+  <button class="chip act" id="refresh">Refresh</button>
+  <button class="chip" id="sort" aria-pressed="false">Sort: signal</button>
+</div>
+
+<div id="err" class="err" hidden></div>
+<ul class="tape" id="tape"></ul>
+<div class="empty" id="empty" hidden></div>
+
+<details class="panel">
+  <summary>Read this before you use any of it</summary>
+  <div class="learn" id="learn"></div>
+</details>
+
+<details class="panel">
+  <summary>Connection check</summary>
+  <span class="fl">Tries each relay once against Yahoo and reports what came back.</span>
+  <button class="go" id="diag">Test relays</button>
+  <div id="diagout" class="note"></div>
+</details>
+
+<div class="note">
+  Prices come from Yahoo Finance through a free public relay and can be delayed by 15 minutes or more.
+  Nothing here is a recommendation to buy or sell anything, and I am not a financial adviser. The signals
+  describe what price and volume have already done — they carry no information about what a business is worth.
+  Verify every number against your broker before you act on it.
+</div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= universe ================= */
+var STOCKS = [
+ ["RELIANCE","Reliance Industries","Energy","large",1],
+ ["TCS","Tata Consultancy Services","IT","large",1],
+ ["HDFCBANK","HDFC Bank","Banks","large",1],
+ ["ICICIBANK","ICICI Bank","Banks","large",1],
+ ["INFY","Infosys","IT","large",1],
+ ["BHARTIARTL","Bharti Airtel","Telecom","large",1],
+ ["SBIN","State Bank of India","Banks","large",1],
+ ["LT","Larsen & Toubro","Infrastructure","large",1],
+ ["ITC","ITC","FMCG","large",1],
+ ["HINDUNILVR","Hindustan Unilever","FMCG","large",1],
+ ["KOTAKBANK","Kotak Mahindra Bank","Banks","large",1],
+ ["AXISBANK","Axis Bank","Banks","large",1],
+ ["BAJFINANCE","Bajaj Finance","NBFC","large",1],
+ ["MARUTI","Maruti Suzuki India","Auto","large",1],
+ ["ASIANPAINT","Asian Paints","Consumer","large",1],
+ ["SUNPHARMA","Sun Pharmaceutical","Pharma","large",1],
+ ["TITAN","Titan Company","Consumer","large",1],
+ ["ULTRACEMCO","UltraTech Cement","Cement","large",1],
+ ["NESTLEIND","Nestle India","FMCG","large",1],
+ ["WIPRO","Wipro","IT","large",1],
+ ["HCLTECH","HCL Technologies","IT","large",1],
+ ["NTPC","NTPC","Power","large",1],
+ ["POWERGRID","Power Grid Corporation","Power","large",1],
+ ["ONGC","Oil & Natural Gas Corp","Energy","large",1],
+ ["COALINDIA","Coal India","Mining","large",1],
+ ["M&M","Mahindra & Mahindra","Auto","large",1],
+ ["TATAMOTORS","Tata Motors","Auto","large",0],
+ ["TATASTEEL","Tata Steel","Metals","large",0],
+ ["JSWSTEEL","JSW Steel","Metals","large",0],
+ ["HINDALCO","Hindalco Industries","Metals","large",0],
+ ["ADANIENT","Adani Enterprises","Conglomerate","large",0],
+ ["ADANIPORTS","Adani Ports & SEZ","Logistics","large",0],
+ ["GRASIM","Grasim Industries","Cement","large",1],
+ ["CIPLA","Cipla","Pharma","large",1],
+ ["DRREDDY","Dr Reddy's Laboratories","Pharma","large",1],
+ ["DIVISLAB","Divi's Laboratories","Pharma","large",0],
+ ["APOLLOHOSP","Apollo Hospitals","Healthcare","large",0],
+ ["BAJAJFINSV","Bajaj Finserv","NBFC","large",1],
+ ["BAJAJ-AUTO","Bajaj Auto","Auto","large",1],
+ ["EICHERMOT","Eicher Motors","Auto","large",1],
+ ["HEROMOTOCO","Hero MotoCorp","Auto","large",1],
+ ["BRITANNIA","Britannia Industries","FMCG","large",1],
+ ["TECHM","Tech Mahindra","IT","large",1],
+ ["INDUSINDBK","IndusInd Bank","Banks","large",0],
+ ["SBILIFE","SBI Life Insurance","Insurance","large",0],
+ ["HDFCLIFE","HDFC Life Insurance","Insurance","large",0],
+ ["SHRIRAMFIN","Shriram Finance","NBFC","large",0],
+ ["TATACONSUM","Tata Consumer Products","FMCG","large",1],
+ ["BPCL","Bharat Petroleum","Energy","large",1],
+ ["TRENT","Trent","Retail","large",0],
+ ["IOC","Indian Oil Corporation","Energy","large",1],
+ ["GAIL","GAIL India","Energy","large",1],
+ ["HINDPETRO","Hindustan Petroleum","Energy","mid",0],
+ ["PFC","Power Finance Corporation","NBFC","mid",0],
+ ["RECLTD","REC Limited","NBFC","mid",0],
+ ["IRFC","Indian Railway Finance Corp","NBFC","mid",0],
+ ["BEL","Bharat Electronics","Defence","large",0],
+ ["HAL","Hindustan Aeronautics","Defence","large",0],
+ ["BHEL","Bharat Heavy Electricals","Capital Goods","mid",0],
+ ["SAIL","Steel Authority of India","Metals","mid",0],
+ ["NMDC","NMDC","Mining","mid",0],
+ ["VEDL","Vedanta","Metals","large",0],
+ ["JINDALSTEL","Jindal Steel","Metals","mid",0],
+ ["NATIONALUM","National Aluminium","Metals","mid",0],
+ ["CONCOR","Container Corporation","Logistics","mid",0],
+ ["IRCTC","IRCTC","Travel","mid",0],
+ ["LICI","Life Insurance Corporation","Insurance","large",0],
+ ["PNB","Punjab National Bank","Banks","mid",0],
+ ["BANKBARODA","Bank of Baroda","Banks","mid",0],
+ ["CANBK","Canara Bank","Banks","mid",0],
+ ["UNIONBANK","Union Bank of India","Banks","mid",0],
+ ["IDFCFIRSTB","IDFC First Bank","Banks","mid",0],
+ ["FEDERALBNK","Federal Bank","Banks","mid",0],
+ ["SOUTHBANK","South Indian Bank","Banks","small",0],
+ ["AUBANK","AU Small Finance Bank","Banks","mid",0],
+ ["BANDHANBNK","Bandhan Bank","Banks","mid",0],
+ ["CHOLAFIN","Cholamandalam Investment","NBFC","large",0],
+ ["MUTHOOTFIN","Muthoot Finance","NBFC","mid",0],
+ ["LTF","L&T Finance","NBFC","mid",0],
+ ["ETERNAL","Eternal (Zomato, Blinkit)","Internet","large",0],
+ ["PAYTM","One97 Communications","Fintech","mid",0],
+ ["NYKAA","FSN E-Commerce (Nykaa)","Internet","mid",0],
+ ["POLICYBZR","PB Fintech","Fintech","mid",0],
+ ["DMART","Avenue Supermarts","Retail","large",0],
+ ["PIDILITIND","Pidilite Industries","Chemicals","large",1],
+ ["DABUR","Dabur India","FMCG","large",1],
+ ["MARICO","Marico","FMCG","large",1],
+ ["GODREJCP","Godrej Consumer Products","FMCG","large",0],
+ ["COLPAL","Colgate-Palmolive India","FMCG","mid",1],
+ ["HAVELLS","Havells India","Electricals","large",0],
+ ["VOLTAS","Voltas","Consumer Durables","mid",0],
+ ["SIEMENS","Siemens India","Capital Goods","large",0],
+ ["ABB","ABB India","Capital Goods","large",0],
+ ["CUMMINSIND","Cummins India","Capital Goods","mid",0],
+ ["BOSCHLTD","Bosch","Auto Ancillary","mid",0],
+ ["ASHOKLEY","Ashok Leyland","Auto","mid",0],
+ ["TVSMOTOR","TVS Motor Company","Auto","large",0],
+ ["BALKRISIND","Balkrishna Industries","Auto Ancillary","mid",0],
+ ["MRF","MRF","Auto Ancillary","mid",0],
+ ["INDIGO","InterGlobe Aviation","Aviation","large",0]
+];
+var META = {};
+STOCKS.forEach(function(r){ META[r[0]] = {name:r[1], sector:r[2], tier:r[3], blue:!!r[4]}; });
+
+var CUES = [
+  ["^NSEI","Nifty 50","in"], ["^BSESN","Sensex","in"], ["^NSEBANK","Bank Nifty","in"],
+  ["^INDIAVIX","India VIX","vix"], ["^GSPC","S&P 500","us"], ["^IXIC","Nasdaq","us"],
+  ["^N225","Nikkei 225","asia"], ["^HSI","Hang Seng","asia"],
+  ["CL=F","Crude WTI","oil"], ["GC=F","Gold","gold"], ["INR=X","USD / INR","fx"]
+];
+
+/* ================= storage ================= */
+var mem = {};
+function load(k,d){ try{ var v=localStorage.getItem(k); return v===null?(k in mem?mem[k]:d):JSON.parse(v); }catch(e){ return (k in mem)?mem[k]:d; } }
+function save(k,v){ mem[k]=v; try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+/* ================= IST clock ================= */
+var IST = new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",weekday:"short",hour12:false});
+function ist(){
+  var p={}, a=IST.formatToParts(new Date());
+  for(var i=0;i<a.length;i++) p[a[i].type]=a[i].value;
+  return {h:+p.hour%24,mi:+p.minute,wd:p.weekday,key:p.year+"-"+p.month+"-"+p.day,mins:(+p.hour%24)*60+(+p.minute)};
+}
+var OPEN=9*60+15, CLOSE=15*60+30, SESSION=CLOSE-OPEN;
+function marketState(){
+  var t=ist();
+  if(t.wd==="Sat"||t.wd==="Sun") return {s:"closed",label:"Market closed — weekend",frac:1,t:t};
+  if(t.mins<9*60) return {s:"closed",label:"Opens 9:15 IST · pre-open call auction from 9:00",frac:.05,t:t};
+  if(t.mins<OPEN) return {s:"pre",label:"Pre-open call auction — opening price being discovered",frac:.05,t:t};
+  if(t.mins<=CLOSE){ var l=CLOSE-t.mins;
+    return {s:"open",label:"Market open — "+Math.floor(l/60)+"h "+String(l%60).padStart(2,"0")+"m to close",frac:Math.max(.06,(t.mins-OPEN)/SESSION),t:t}; }
+  return {s:"closed",label:"Market closed — showing today's closing data",frac:1,t:t};
+}
+function istKey(ms){ var a=IST.formatToParts(new Date(ms)),o={}; for(var i=0;i<a.length;i++)o[a[i].type]=a[i].value; return o.year+"-"+o.month+"-"+o.day; }
+function monthYear(ms){ return new Intl.DateTimeFormat("en-GB",{month:"short",year:"numeric",timeZone:"Asia/Kolkata"}).format(new Date(ms)); }
+
+/* ================= transport ================= */
+var TRANSPORTS = [
+  {n:"allorigins",  u:function(t){return "https://api.allorigins.win/raw?url="+encodeURIComponent(t);}},
+  {n:"allorigins2", u:function(t){return "https://api.allorigins.win/get?url="+encodeURIComponent(t);}, wrap:"contents"},
+  {n:"codetabs",    u:function(t){return "https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(t);}},
+  {n:"corsproxy",   u:function(t){return "https://corsproxy.io/?url="+encodeURIComponent(t);}},
+  {n:"thingproxy",  u:function(t){return "https://thingproxy.freeboard.io/fetch/"+t;}},
+  {n:"direct",      u:function(t){return t;}}
+];
+var goodT=null, feedName=null;
+function withTimeout(p,ms){ return new Promise(function(res,rej){ var to=setTimeout(function(){rej(new Error("timeout"));},ms);
+  p.then(function(v){clearTimeout(to);res(v);},function(e){clearTimeout(to);rej(e);}); }); }
+
+async function viaTransport(i,target){
+  var tr=TRANSPORTS[i], r;
+  try{ r = await withTimeout(fetch(tr.u(target),{cache:"no-store"}),14000); }
+  catch(e){ throw new Error(tr.n+": "+(e.message==="timeout"?"timed out":"blocked or unreachable")); }
+  if(!r.ok) throw new Error(tr.n+": HTTP "+r.status);
+  var txt=await r.text(), j;
+  try{ j=JSON.parse(txt); }catch(e){ throw new Error(tr.n+": returned non-JSON"); }
+  if(tr.wrap){ try{ j=JSON.parse(j[tr.wrap]); }catch(e){ throw new Error(tr.n+": bad wrapper"); } }
+  if(j&&j.finance&&j.finance.error) throw new Error(tr.n+": Yahoo says "+(j.finance.error.description||"error"));
+  if(!j||!j.chart) throw new Error(tr.n+": no chart data");
+  if(j.chart.error) throw new Error(tr.n+": "+(j.chart.error.description||"symbol rejected"));
+  return j;
+}
+async function fetchJSON(target){
+  var order=TRANSPORTS.map(function(_,i){return i;});
+  if(goodT!==null){ order=order.filter(function(i){return i!==goodT;}); order.unshift(goodT); }
+  var last=null;
+  for(var k=0;k<order.length;k++){
+    try{ var j=await viaTransport(order[k],target); goodT=order[k]; feedName=TRANSPORTS[order[k]].n; return j; }
+    catch(e){ last=e; }
+  }
+  throw last||new Error("no route to Yahoo");
+}
+function chartURL(sym,range,interval,host){
+  return "https://"+(host||"query1")+".finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(sym)
+       + "?range="+range+"&interval="+interval;
+}
+async function fetchChart(sym,range,interval){
+  var err=null, hosts=["query1","query2"];
+  for(var i=0;i<hosts.length;i++){
+    try{ return await fetchJSON(chartURL(sym,range,interval,hosts[i])); }catch(e){ err=e; }
+  }
+  throw err;
+}
+function toBars(j){
+  var r=j.chart&&j.chart.result&&j.chart.result[0];
+  if(!r||!r.timestamp) return null;
+  var q=r.indicators.quote[0], out=[];
+  for(var i=0;i<r.timestamp.length;i++){
+    if(q.close[i]==null||q.high[i]==null||q.low[i]==null) continue;
+    out.push({t:r.timestamp[i]*1000,o:q.open[i],h:q.high[i],l:q.low[i],c:q.close[i],v:q.volume[i]||0});
+  }
+  return {bars:out, meta:r.meta||{}};
+}
+
+/* ================= maths ================= */
+function mean(a){var s=0;for(var i=0;i<a.length;i++)s+=a[i];return a.length?s/a.length:0;}
+function maxOf(a,f){var m=-Infinity,x;for(var i=0;i<a.length;i++){x=f(a[i]);if(x>m)m=x;}return m;}
+function minOf(a,f){var m=Infinity,x;for(var i=0;i<a.length;i++){x=f(a[i]);if(x<m)m=x;}return m;}
+function argMax(a,f){var m=-Infinity,b=null,x;for(var i=0;i<a.length;i++){x=f(a[i]);if(x>m){m=x;b=a[i];}}return b;}
+function argMin(a,f){var m=Infinity,b=null,x;for(var i=0;i<a.length;i++){x=f(a[i]);if(x<m){m=x;b=a[i];}}return b;}
+function atr(bars,n){ if(bars.length<n+1)n=Math.max(2,bars.length-1);
+  var t=[];for(var i=bars.length-n;i<bars.length;i++){ if(i<1)continue; var b=bars[i],p=bars[i-1];
+  t.push(Math.max(b.h-b.l,Math.abs(b.h-p.c),Math.abs(b.l-p.c))); } return mean(t); }
+function sma(bars,n){ if(bars.length<n)return null; var s=0;for(var i=bars.length-n;i<bars.length;i++)s+=bars[i].c; return s/n; }
+
+/* ================= analysis ================= */
+function analyse(sym,pack,st){
+  var bars=pack.bars, m=pack.meta;
+  if(bars.length<30) return null;
+  var last=bars[bars.length-1];
+  var isToday = istKey(last.t)===st.t.key;
+  var frac = (isToday && st.s==="open") ? st.frac : 1;
+  var prior=bars.slice(0,bars.length-1), prev=prior[prior.length-1];
+  var w20=prior.slice(-20);
+
+  var ltp = (m.regularMarketPrice!=null && isToday) ? m.regularMarketPrice : last.c;
+  var dayHigh=Math.max(last.h,ltp), dayLow=Math.min(last.l,ltp);
+  var prevClose=prev.c;
+  var d20High=maxOf(w20,function(b){return b.h;}), d20Low=minOf(w20,function(b){return b.l;});
+  var yrHigh=maxOf(prior,function(b){return b.h;}), yrLow=minOf(prior,function(b){return b.l;});
+  var avgVol=mean(w20.map(function(b){return b.v;}));
+  var a14=atr(prior,14), s20=sma(prior,20), s50=sma(prior,50), s200=sma(prior,200);
+  var rvol=avgVol?last.v/(avgVol*frac):0;
+  var range=dayHigh-dayLow, pos=range>0?(ltp-dayLow)/range:.5;
+  var chgPct=prevClose?(ltp-prevClose)/prevClose*100:0;
+  var gapPct=prevClose&&last.o?(last.o-prevClose)/prevClose*100:0;
+  var offYrHigh = yrHigh?(ltp-yrHigh)/yrHigh*100:0;
+  var offYrLow  = yrLow?(ltp-yrLow)/yrLow*100:0;
+
+  var hits=[], up=0, down=0;
+  if(ltp>prev.h){ up+=26; hits.push({t:"Above prev high",c:"g"}); }
+  if(ltp<prev.l){ down+=26; hits.push({t:"Below prev low",c:"r"}); }
+  if(ltp>d20High){ up+=24; hits.push({t:"20-day high",c:"g"}); }
+  if(ltp<d20Low){ down+=24; hits.push({t:"20-day low",c:"r"}); }
+  var vp = rvol>=2.5?26:rvol>=1.5?18:rvol>=1.15?8:0;
+  if(vp){ up+=vp; down+=vp; hits.push({t:rvol.toFixed(1)+"x volume",c:rvol>=2.5?"hot":""}); }
+  if(pos>=.85){ up+=11; hits.push({t:"At day high",c:"g"}); }
+  if(pos<=.15){ down+=11; hits.push({t:"At day low",c:"r"}); }
+  if(yrHigh&&ltp>=yrHigh*0.98){ up+=9; hits.push({t:"52w high zone",c:"hot"}); }
+  if(yrLow&&ltp<=yrLow*1.02){ down+=9; hits.push({t:"52w low zone",c:"r"}); }
+  if(s20&&s50){
+    if(ltp>s20&&s20>s50){ up+=7; hits.push({t:"Above 20 & 50 DMA",c:""}); }
+    if(ltp<s20&&s20<s50){ down+=7; hits.push({t:"Below 20 & 50 DMA",c:""}); }
+  }
+  if(Math.abs(gapPct)>=1.5) hits.push({t:(gapPct>0?"Gapped up ":"Gapped down ")+Math.abs(gapPct).toFixed(1)+"%", c:gapPct>0?"g":"r"});
+
+  var dir = up===down ? "flat" : (up>down?"up":"down");
+  var score = dir==="flat" ? 0 : Math.min(100,Math.max(up,down));
+  var trigger = dir==="down" ? Math.min(prev.l,d20Low) : Math.max(prev.h,d20High);
+  var md = META[sym]||{};
+
+  return {
+    sym:sym, name:md.name||m.longName||"", sector:md.sector||"—", tier:md.tier||"—", blue:!!md.blue,
+    ltp:ltp, chgPct:chgPct, gapPct:gapPct, prevClose:prevClose,
+    dayHigh:dayHigh, dayLow:dayLow, dayOpen:last.o, prevHigh:prev.h, prevLow:prev.l,
+    d20High:d20High, d20Low:d20Low, yrHigh:yrHigh, yrLow:yrLow, offYrHigh:offYrHigh, offYrLow:offYrLow,
+    rvol:rvol, vol:last.v, avgVol:avgVol, atr:a14, s20:s20, s50:s50, s200:s200, pos:pos,
+    dir:dir, score:score, hits:hits, trigger:trigger, stale:!isToday,
+    spark:bars.slice(-60).map(function(b){return b.c;})
+  };
+}
+
+/* ================= formatting ================= */
+function rs(n){ if(n==null||isNaN(n))return "\u2014"; return "\u20B9"+Number(n).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function rs0(n){ if(n==null||isNaN(n))return "\u2014"; return "\u20B9"+Number(n).toLocaleString("en-IN",{maximumFractionDigits:0}); }
+function pct(n){ if(n==null||isNaN(n))return "\u2014"; return (n>=0?"+":"")+n.toFixed(2)+"%"; }
+function vol(n){ if(n==null)return "\u2014";
+  if(n>=1e7)return (n/1e7).toFixed(2)+" Cr"; if(n>=1e5)return (n/1e5).toFixed(2)+" L";
+  if(n>=1e3)return (n/1e3).toFixed(1)+" K"; return String(n); }
+function sparkSVG(v,dir){
+  if(!v||v.length<3) return "";
+  var lo=Math.min.apply(null,v), hi=Math.max.apply(null,v), sp=(hi-lo)||1, W=300,H=40,p=[];
+  for(var i=0;i<v.length;i++) p.push(((i/(v.length-1))*W).toFixed(1)+","+(H-((v[i]-lo)/sp)*(H-4)-2).toFixed(1));
+  var c = dir==="down"?"var(--down)":dir==="up"?"var(--up)":"var(--flat)";
+  return '<svg class="spark" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">'
+    +'<polyline fill="none" stroke="'+c+'" stroke-width="1.6" stroke-linejoin="round" points="'+p.join(" ")+'"/></svg>';
+}
+
+/* ================= state ================= */
+var results=[], cat="all", sector="all", sortBy="signal", openSet={}, athCache={}, loading=false;
+
+var CATS=[
+ ["all","All 100"],["up","Breaking up"],["down","Breaking down"],
+ ["gain","Top gainers"],["lose","Top losers"],["volume","Volume spike"],
+ ["hi52","Near 52w high"],["lo52","Near 52w low"],["ath","All-time high"],["atl","All-time low"],
+ ["blue","Blue chip"],["large","Large cap"],["mid","Mid cap"]
+];
+
+function inCat(r){
+  switch(cat){
+    case "up": return r.dir==="up"&&r.score>0;
+    case "down": return r.dir==="down"&&r.score>0;
+    case "gain": return r.chgPct>0;
+    case "lose": return r.chgPct<0;
+    case "volume": return r.rvol>=1.5;
+    case "hi52": return r.offYrHigh>=-3;
+    case "lo52": return r.offYrLow<=3;
+    case "ath": return athCache[r.sym]&&athCache[r.sym].atAllTimeHigh;
+    case "atl": return athCache[r.sym]&&athCache[r.sym].atAllTimeLow;
+    case "blue": return r.blue;
+    case "large": return r.tier==="large";
+    case "mid": return r.tier==="mid"||r.tier==="small";
+    default: return true;
+  }
+}
+
+/* ================= row ================= */
+function rowHTML(r){
+  var cls=r.dir==="up"?"b-up":r.dir==="down"?"b-down":"";
+  var col=r.chgPct>0?"up":r.chgPct<0?"down":"";
+  var tags=r.hits.slice(0,4).map(function(h){return '<span class="tag '+(h.c||"")+'">'+h.t+'</span>';}).join("");
+  if(r.blue) tags+='<span class="tag">blue chip</span>';
+  var ath=athCache[r.sym];
+  if(ath&&ath.atAllTimeHigh) tags+='<span class="tag hot">all-time high</span>';
+  if(ath&&ath.atAllTimeLow) tags+='<span class="tag r">all-time low</span>';
+  if(r.stale) tags+='<span class="tag">last session</span>';
+
+  function L(a,b,c,d){ return "<dt>"+a+"</dt><dd>"+b+"</dd><dt>"+c+"</dt><dd>"+d+"</dd>"; }
+  var lv = L("Open",rs(r.dayOpen),"Prev close",rs(r.prevClose))
+         + L("Day high",rs(r.dayHigh),"Day low",rs(r.dayLow))
+         + L("Prev high",rs(r.prevHigh),"Prev low",rs(r.prevLow))
+         + L("20-day high",rs(r.d20High),"20-day low",rs(r.d20Low))
+         + L("52w high",rs(r.yrHigh),"52w low",rs(r.yrLow))
+         + L("From 52w high",pct(r.offYrHigh),"From 52w low",pct(r.offYrLow))
+         + L("20 DMA",rs(r.s20),"50 DMA",rs(r.s50))
+         + L("200 DMA",r.s200?rs(r.s200):"\u2014","Daily swing",r.atr?rs(r.atr):"\u2014")
+         + L("Volume",vol(r.vol),"20-day avg",vol(r.avgVol));
+
+  var athBlock = ath
+    ? (ath.high!=null
+        ? '<dl class="levels">'+L("All-time high",rs(ath.high),"Reached",ath.highWhen)
+          + L("From that high",pct((r.ltp-ath.high)/ath.high*100),"All-time low",rs(ath.low))+'</dl>'
+        : '<p class="why">Long history unavailable for this symbol.</p>')
+    : '<p class="why">Tap <b>Load full history</b> to see where this sits against its all-time high.</p>'
+      + '<button class="go athbtn" data-sym="'+r.sym+'">Load full history</button>';
+
+  var why;
+  if(r.dir==="flat"){
+    why = "Inside yesterday's range on ordinary volume. Nothing has been signalled here — this is the normal state for most stocks on most days.";
+  } else {
+    why = "Price is <b>"+(r.dir==="up"?"above":"below")+"</b> the level where its recent range "+(r.dir==="up"?"ends":"breaks")+", <b>"+rs(r.trigger)+"</b>"
+        + (r.rvol?", on <b>"+r.rvol.toFixed(1)+"x</b> the volume it normally trades by this point in the session":"")
+        + ". That is a description of what already happened, not a forecast. Roughly half of range breaks reverse the same week.";
+  }
+
+  var risk="";
+  if(r.atr){
+    var fail = r.dir==="down" ? r.dayHigh : r.dayLow;
+    risk = '<div class="risk">This stock swings about <b>'+rs(r.atr)+'</b> a day, or '+(r.atr/r.ltp*100).toFixed(1)+'% of its price. '
+         + 'If the move is real, the level it should not come back through is <b>'+rs(fail)+'</b>. '
+         + 'The distance from '+rs(r.ltp)+' to there is <b>'+rs(Math.abs(r.ltp-fail))+' per share</b> \u2014 that is what one share costs you if you are wrong. '
+         + 'Decide the rupee amount you are willing to lose first, then divide by that number to get your quantity. Never the other way round.</div>';
+  }
+
+  var links = '<div class="links">'
+    + '<a href="https://www.screener.in/company/'+r.sym+'/consolidated/" target="_blank" rel="noopener">Screener.in \u2014 financials</a>'
+    + '<a href="https://www.nseindia.com/get-quotes/equity?symbol='+encodeURIComponent(r.sym)+'" target="_blank" rel="noopener">NSE quote</a>'
+    + '<a href="https://finance.yahoo.com/quote/'+encodeURIComponent(r.sym)+'.NS" target="_blank" rel="noopener">Yahoo</a></div>';
+
+  return '<li class="row '+cls+(openSet[r.sym]?" open":"")+'" data-sym="'+r.sym+'">'
+    + '<div class="head" role="button" tabindex="0">'
+    +   '<div><div class="sym">'+r.sym+'</div><div class="nm">'+r.name+' \u00b7 '+r.sector+'</div></div>'
+    +   '<div class="px"><div class="ltp">'+rs(r.ltp)+'</div><div class="chg '+col+'">'+pct(r.chgPct)+'</div></div>'
+    + '</div>'
+    + (tags?'<div class="tags">'+tags+'</div>':"")
+    + '<div class="meter"><i style="width:'+r.score+'%"></i></div>'
+    + '<div class="detail">'
+    +   sparkSVG(r.spark,r.dir)
+    +   '<p class="why">'+why+'</p>'
+    +   '<div class="sec">Price levels</div><dl class="levels">'+lv+'</dl>'
+    +   '<div class="sec">Long-term position</div>'+athBlock
+    +   '<div class="sec">Before you buy this, check</div>'
+    +   '<ul class="check">'
+    +     '<li>Have sales and net profit grown for five straight years, or is one good quarter carrying the story?</li>'
+    +     '<li>Is operating margin steady or improving? A falling margin on rising sales means it is buying growth.</li>'
+    +     '<li>ROCE above roughly 15% sustained? Below that the business struggles to beat its own cost of capital.</li>'
+    +     '<li>Debt to equity \u2014 under 1 for most industries. Banks and NBFCs are read differently, on their bad-loan ratio instead.</li>'
+    +     '<li>Does cash from operations roughly track net profit? If profit rises and cash does not, ask why.</li>'
+    +     '<li>Promoter holding steady, and how much of it is pledged? Heavy pledging is a standing risk.</li>'
+    +     '<li>P/E against its own ten-year range and against its sector \u2014 not against the market as a whole.</li>'
+    +   '</ul>'
+    +   links
+    +   risk
+    + '</div></li>';
+}
+
+/* ================= render ================= */
+function render(){
+  var list=results.filter(function(r){
+    if(sector!=="all"&&r.sector!==sector) return false;
+    return inCat(r);
+  });
+  if(sortBy==="signal") list.sort(function(a,b){return b.score-a.score||Math.abs(b.chgPct)-Math.abs(a.chgPct);});
+  else if(cat==="lose") list.sort(function(a,b){return a.chgPct-b.chgPct;});
+  else list.sort(function(a,b){return b.chgPct-a.chgPct;});
+
+  document.getElementById("tape").innerHTML=list.map(rowHTML).join("");
+  var e=document.getElementById("empty");
+  if(!list.length){ e.hidden=false;
+    e.textContent = results.length ? "Nothing matches that filter right now." : "No data loaded. Tap Refresh.";
+  } else e.hidden=true;
+
+  var ups=results.filter(function(r){return r.dir==="up"&&r.score>=50;}).length;
+  var dns=results.filter(function(r){return r.dir==="down"&&r.score>=50;}).length;
+  var lede=document.getElementById("lede");
+  if(!results.length) lede.textContent="Nothing loaded";
+  else if(!ups&&!dns) lede.textContent="No strong signals — quiet tape";
+  else lede.innerHTML='<em class="up">'+ups+'</em> breaking up \u00b7 <em class="down">'+dns+'</em> breaking down';
+  document.getElementById("ledesub").textContent =
+    results.length+" of "+STOCKS.length+" loaded \u00b7 showing "+list.length+(feedName?" \u00b7 via "+feedName:"");
+}
+
+/* ================= cues ================= */
+function cueRead(map){
+  function g(k){ return map[k]!=null?map[k]:null; }
+  var us = [g("^GSPC"),g("^IXIC")].filter(function(x){return x!=null;});
+  var asia = [g("^N225"),g("^HSI")].filter(function(x){return x!=null;});
+  var usAvg = us.length?mean(us):null, asAvg = asia.length?mean(asia):null;
+  var oil=g("CL=F"), fx=g("INR=X"), vix=g("^INDIAVIX"), nifty=g("^NSEI");
+  var bits=[];
+  if(usAvg!=null) bits.push("US markets closed "+(usAvg>0.4?"<b>firmly higher</b>":usAvg<-0.4?"<b>firmly lower</b>":"roughly flat"));
+  if(asAvg!=null) bits.push("Asia is "+(asAvg>0.4?"<b>up</b>":asAvg<-0.4?"<b>down</b>":"mixed")+" this morning");
+  if(oil!=null&&Math.abs(oil)>=1.5) bits.push("crude "+(oil>0?"<b>up</b> "+oil.toFixed(1)+"% (a cost for an importer like India)":"<b>down</b> "+Math.abs(oil).toFixed(1)+"% (helpful)"));
+  if(fx!=null&&Math.abs(fx)>=0.3) bits.push("the rupee is "+(fx>0?"<b>weaker</b>":"<b>stronger</b>")+" against the dollar");
+  if(vix!=null) bits.push("India VIX "+(vix>6?"<b>spiking</b> — expect wide swings":vix<-6?"cooling off":"steady"));
+  var s = bits.length ? bits.join(", ")+"." : "Cues unavailable.";
+  if(nifty!=null) s = "Nifty "+(nifty>0?"+":"")+nifty.toFixed(2)+"%. "+s;
+  s += " None of this predicts today's close — it sets the mood, and the mood changes by 10am.";
+  return s;
+}
+
+async function loadCues(){
+  var grid=document.getElementById("cuegrid"), map={}, html=[];
+  for(var i=0;i<CUES.length;i++){
+    var c=CUES[i], val=null, chg=null;
+    try{
+      var j=await fetchChart(c[0],"5d","1d");
+      var p=toBars(j); if(!p||p.bars.length<2) throw new Error("thin");
+      var m=p.meta, b=p.bars, lastB=b[b.length-1];
+      val = m.regularMarketPrice!=null?m.regularMarketPrice:lastB.c;
+      var base = m.chartPreviousClose!=null?m.chartPreviousClose:b[b.length-2].c;
+      chg = base?((val-base)/base*100):null;
+      if(chg!=null) map[c[0]]=chg;
+    }catch(e){}
+    var cc = chg==null?"":(chg>0?"up":chg<0?"down":"");
+    html.push('<div class="cue"><div class="cn">'+c[1]+'</div>'
+      +'<div class="cv">'+(val==null?"\u2014":Number(val).toLocaleString("en-IN",{maximumFractionDigits:2}))+'</div>'
+      +'<div class="cc '+cc+'">'+(chg==null?"":pct(chg))+'</div></div>');
+    grid.innerHTML=html.join("");
+  }
+  document.getElementById("cueread").innerHTML=cueRead(map);
+}
+
+/* ================= all-time history ================= */
+async function loadATH(sym){
+  if(athCache[sym]) return athCache[sym];
+  try{
+    var j=await fetchChart(sym+".NS","max","1mo");
+    var p=toBars(j);
+    if(!p||p.bars.length<12) throw new Error("thin");
+    var hi=argMax(p.bars,function(b){return b.h;}), lo=argMin(p.bars,function(b){return b.l;});
+    var r=results.find(function(x){return x.sym===sym;});
+    var ltp=r?r.ltp:null;
+    athCache[sym]={
+      high:hi.h, highWhen:monthYear(hi.t), low:lo.l, lowWhen:monthYear(lo.t),
+      atAllTimeHigh: ltp!=null && ltp>=hi.h*0.985,
+      atAllTimeLow:  ltp!=null && ltp<=lo.l*1.03
+    };
+  }catch(e){ athCache[sym]={high:null,low:null,atAllTimeHigh:false,atAllTimeLow:false}; }
+  save("md.ath",athCache);
+  return athCache[sym];
+}
+
+/* ================= load ================= */
+async function loadAll(){
+  if(loading) return;
+  loading=true;
+  var st=marketState(), errEl=document.getElementById("err"), bar=document.getElementById("prog");
+  errEl.hidden=true; bar.style.width="0%";
+  var out=[], failed=[], reason=null, done=0;
+  var queue=STOCKS.map(function(r){return r[0];});
+  var total=queue.length;
+
+  async function worker(){
+    while(queue.length){
+      var sym=queue.shift();
+      try{
+        var j=await fetchChart(sym+".NS","1y","1d");
+        var p=toBars(j); if(!p) throw new Error("no bars returned");
+        var a=analyse(sym,p,st);
+        if(a) out.push(a); else failed.push(sym);
+      }catch(e){ failed.push(sym); if(!reason) reason=e.message; }
+      done++;
+      bar.style.width=(done/total*100).toFixed(1)+"%";
+      if(done%8===0){ results=out.slice(); render(); }
+    }
+  }
+  await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
+  results=out; render(); bar.style.width="100%";
+
+  if(failed.length){
+    errEl.hidden=false;
+    if(failed.length===total){
+      errEl.innerHTML="No prices came through. Last error: <b>"+(reason||"unknown")+"</b>."
+        +"<br><br>If it says <i>blocked or unreachable</i>, this page is running somewhere that forbids outside requests \u2014 save the file and open it in Safari. "
+        +"If it says <i>HTTP 429</i>, the relay is rate-limited: wait five minutes. Run the connection check below to see which relays are alive.";
+    } else {
+      errEl.textContent = failed.length+" symbol"+(failed.length>1?"s":"")+" didn't load: "+failed.join(", ")
+        +". Usually a rate limit or a ticker that has been renamed.";
+    }
+  }
+  loading=false;
+}
+
+/* ================= chrome ================= */
+function tickClock(){
+  var st=marketState();
+  document.getElementById("clock").textContent=String(st.t.h).padStart(2,"0")+":"+String(st.t.mi).padStart(2,"0")+" IST";
+  document.getElementById("mkt").textContent=st.label;
+  document.getElementById("dot").className="dot"+(st.s==="open"?" live":st.s==="pre"?" pre":"");
+}
+
+(function buildChips(){
+  var b=document.getElementById("cats");
+  b.innerHTML=CATS.map(function(c){
+    return '<button class="chip" data-c="'+c[0]+'" aria-pressed="'+(c[0]==="all")+'">'+c[1]+'</button>';
+  }).join("");
+  b.addEventListener("click",function(e){
+    var t=e.target.closest(".chip[data-c]"); if(!t) return;
+    cat=t.dataset.c;
+    b.querySelectorAll(".chip").forEach(function(x){ x.setAttribute("aria-pressed",String(x===t)); });
+    if((cat==="ath"||cat==="atl")&&!Object.keys(athCache).length){
+      document.getElementById("empty").hidden=false;
+      document.getElementById("empty").textContent="Checking all-time levels for the stocks near their 52-week extremes…";
+      scanExtremes();
+    }
+    render();
+  });
+})();
+
+(function buildSectors(){
+  var s={}, sel=document.getElementById("sector");
+  STOCKS.forEach(function(r){ s[r[2]]=1; });
+  var keys=Object.keys(s).sort();
+  sel.innerHTML='<option value="all">All sectors</option>'+keys.map(function(k){return '<option value="'+k+'">'+k+'</option>';}).join("");
+  sel.addEventListener("change",function(){ sector=sel.value; render(); });
+})();
+
+async function scanExtremes(){
+  var cands=results.filter(function(r){ return r.offYrHigh>=-4 || r.offYrLow<=4; }).slice(0,30);
+  for(var i=0;i<cands.length;i++){ await loadATH(cands[i].sym); render(); }
+  document.getElementById("empty").textContent="Nothing at an all-time extreme in this list right now.";
+}
+
+document.getElementById("tape").addEventListener("click",function(e){
+  var ab=e.target.closest(".athbtn");
+  if(ab){ e.stopPropagation(); ab.textContent="Loading…"; loadATH(ab.dataset.sym).then(render); return; }
+  var h=e.target.closest(".head"); if(!h) return;
+  var li=h.closest("li.row"); li.classList.toggle("open");
+  openSet[li.dataset.sym]=li.classList.contains("open");
+});
+document.getElementById("tape").addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ") return;
+  var h=e.target.closest(".head"); if(!h) return; e.preventDefault(); h.click();
+});
+
+document.getElementById("refresh").addEventListener("click",function(){ loadAll(); loadCues(); });
+document.getElementById("sort").addEventListener("click",function(){
+  sortBy = sortBy==="signal" ? "move" : "signal";
+  this.textContent = "Sort: "+(sortBy==="signal"?"signal":"% move");
+  this.setAttribute("aria-pressed",String(sortBy!=="signal"));
+  render();
+});
+
+document.getElementById("diag").addEventListener("click",async function(){
+  var out=document.getElementById("diagout");
+  out.textContent="Testing "+TRANSPORTS.length+" relays…";
+  var target=chartURL("RELIANCE.NS","5d","1d","query1"), lines=[];
+  for(var i=0;i<TRANSPORTS.length;i++){
+    var t0=Date.now(), msg;
+    try{ var j=await viaTransport(i,target);
+      msg='<b class="up">works</b> \u2014 \u20B9'+j.chart.result[0].meta.regularMarketPrice+' in '+(Date.now()-t0)+'ms';
+    }catch(e){ msg='<span class="down">'+e.message.replace(/^[^:]+:\s*/,"")+'</span>'; }
+    lines.push("<b>"+TRANSPORTS[i].n+"</b> \u2014 "+msg);
+    out.innerHTML=lines.join("<br>");
+  }
+});
+
+/* ================= learn ================= */
+document.getElementById("learn").innerHTML = [
+'<h3>What this screen actually measures</h3>',
+'<p>Every score on this page is built from two things: <b>price</b> and <b>volume</b>. That is all. It can tell you a stock has pushed out of the range it traded in for the last month, and that unusually many people are trading it while that happens. It cannot tell you whether the company earns money, whether the price is sensible, or whether the move continues after lunch.</p>',
+'<p>So treat a high score as a <b>question</b> — "why is this moving?" — not an answer. The answer is usually in the news, the quarterly results, or a sector-wide move, and you have to go find it.</p>',
+
+'<h3>Two different games</h3>',
+'<p>People use the word "invest" for two activities that share almost nothing.</p>',
+'<table>',
+'<tr><td>Trading</td><td>Holding hours to weeks. You are betting on price movement. Breakouts, volume, stop levels. Wins and losses are frequent and small; costs and taxes eat a lot.</td></tr>',
+'<tr><td>Investing</td><td>Holding years. You are buying a share of a business and want its profits to grow. Entry price matters far less than the business being right.</td></tr>',
+'</table>',
+'<p>This tool is built for the first. If what you actually want is the second, a breakout screen is close to useless — a good business is worth owning whether or not it made a 20-day high today.</p>',
+
+'<h3>How people judge the business itself</h3>',
+'<p>These are the standard checks. Every one is on Screener.in for free, linked from each stock above.</p>',
+'<table>',
+'<tr><td>Sales growth</td><td>Revenue rising over 5 and 10 years. One good year proves nothing.</td></tr>',
+'<tr><td>Profit growth</td><td>Net profit growing at least in line with sales. If sales climb and profit does not, margins are being squeezed.</td></tr>',
+'<tr><td>Operating margin</td><td>Stable or widening. A shrinking margin is the earliest warning that competition or input costs are biting.</td></tr>',
+'<tr><td>ROE / ROCE</td><td>Return on the capital the business uses. Sustained 15%+ is the usual bar. Consistently low returns mean growth destroys value rather than creating it.</td></tr>',
+'<tr><td>Debt to equity</td><td>Under 1 for most sectors. High debt turns an ordinary bad year into a crisis. Banks and NBFCs are read on bad-loan ratios and capital adequacy instead.</td></tr>',
+'<tr><td>Cash flow</td><td>Cash from operations should broadly track reported profit. Profit without cash is the single most common sign of accounting trouble.</td></tr>',
+'<tr><td>Promoter holding</td><td>Steady or rising is reassuring. Falling holding, or a large pledged share, is a real risk.</td></tr>',
+'<tr><td>P/E and P/B</td><td>Valuation. Only meaningful against the company\'s own history and its direct competitors — never against the market average.</td></tr>',
+'<tr><td>Dividend record</td><td>An unbroken record through bad years says something about both cash generation and management temperament.</td></tr>',
+'</table>',
+'<p><b>Blue chip</b> is not a technical category — it is shorthand for large, long-established, consistently profitable companies with a dividend record. The tag on this page marks the ones that broadly fit. Blue chips fall too, sometimes for years.</p>',
+
+'<h3>What the tags on each stock mean</h3>',
+'<table>',
+'<tr><td>Above prev high</td><td>Trading past yesterday\'s highest price. The simplest definition of short-term strength.</td></tr>',
+'<tr><td>20-day high / low</td><td>Broken out of the range of the last month. Institutional buying often shows up here first.</td></tr>',
+'<tr><td>2.4x volume</td><td>Trading 2.4 times the volume it normally would <i>by this point in the session</i>. A breakout on thin volume usually means nothing.</td></tr>',
+'<tr><td>52w high zone</td><td>Within 2% of its one-year high. Stocks near highs have no trapped sellers overhead — which is why momentum strategies favour them.</td></tr>',
+'<tr><td>Gapped up / down</td><td>Opened well away from yesterday\'s close, so news broke overnight. Find the news before doing anything.</td></tr>',
+'<tr><td>At day high</td><td>Sitting in the top 15% of today\'s range. Buyers are still in control as of the last print.</td></tr>',
+'</table>',
+
+'<h3>Pre-market, and what it is worth</h3>',
+'<p>NSE runs a call-auction pre-open from 9:00 to 9:15 IST, and it decides the opening price. That order book is not in this feed, so the cues strip at the top uses the next best thing: where the US and Asian markets closed, crude, gold, the rupee, and India VIX. Those set the tone for the open. They do not survive contact with the actual session — by 10am the tape has its own mind.</p>',
+
+'<h3>Sizing, which matters more than picking</h3>',
+'<p>Decide the rupee loss you can accept before you look at the quantity. If a stock trades at \u20B9500 and the level where the move has clearly failed is \u20B9485, you are risking \u20B915 a share. If you can accept losing \u20B93,000, you buy 200 shares. Not 500 because you had the money.</p>',
+'<p>Most people do this backwards — decide the amount to deploy, then hope. That is how a single bad position ends a year.</p>',
+
+'<h3>The odds, from the regulator</h3>',
+'<p>SEBI has measured this directly, on real account data rather than surveys. In the equity cash segment, <b>around 7 in 10 individual intraday traders lost money</b> in FY23. In equity F&amp;O it is far worse: <b>93% of individual traders lost money</b> across FY22–FY24, with combined losses over \u20B91.8 lakh crore, and the average loss-maker down about \u20B92 lakh over three years.</p>',
+'<p>Those numbers are not a reason to never trade. They are a reason to assume you are in the 90% until your own record over a year of dated, written-down trades proves otherwise.</p>',
+
+'<h3>Mistakes that cost beginners the most</h3>',
+'<ul>',
+'<li>Averaging down into a falling position because the loss feels less real if you do not book it.</li>',
+'<li>Buying penny stocks and small caps on tips, where the price is set by whoever is promoting it.</li>',
+'<li>Using leverage or F&amp;O before having a profitable cash record. Leverage multiplies a bad process.</li>',
+'<li>Not counting brokerage, STT, stamp duty and slippage. On frequent trading these often exceed the edge.</li>',
+'<li>No journal. Without dated entries and the reason for each trade, you cannot tell skill from luck.</li>',
+'<li>Confusing a rising market with personal ability. Almost everything goes up in a bull run.</li>',
+'</ul>',
+
+'<h3>The boring option</h3>',
+'<p>For money you need in five or more years, a monthly SIP into a broad low-cost index fund beats what most active retail investors achieve, requires no screen, and cannot be ruined by a bad week. Stock picking is worth doing with money you have deliberately set aside for it, after that base is in place. That is not exciting advice, which is roughly why it works.</p>',
+
+'<p style="margin-top:16px"><b>None of this is financial advice.</b> I am not a registered adviser and this page knows nothing about your finances, taxes or goals. For anything material, talk to a SEBI-registered investment adviser.</p>'
+].join("");
+
+/* ================= boot ================= */
+athCache = load("md.ath",{}) || {};
+tickClock();
+setInterval(tickClock,20000);
+loadCues();
+loadAll();
+})();
+</script>
+</body>
+</html>
